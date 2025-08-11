@@ -21,8 +21,8 @@ epd = EPD_5in83_B()
 epd.init()
 epd.Clear(0xFF, 0x00)
 
-KEY0_PIN = 2  # User Key 0
-KEY1_PIN = 3  # User Key 1
+KEY0_PIN = 2
+KEY1_PIN = 3
 
 _key0_pressed = False
 _key1_pressed = False
@@ -43,21 +43,87 @@ def read_code(idx):
     except:
         return "No code.", fn
 
-def read_meta():
+def read_memory():
     global _current_idx
     try:
-        with open("meta.txt") as f:
-            lines = [x.strip() for x in f.readlines()]
-            count = int(lines[0]) if len(lines) > 0 else 0
-            idx = int(lines[1]) if len(lines) > 1 else _current_idx
-            _current_idx = clamp_idx(idx)
-            return count, _current_idx
+        with open("memory.dat") as f:
+            content = f.read().strip()
+            if not content:
+                return init_default_memory()
+            
+            data = parse_memory_data(content)
+            _current_idx = clamp_idx(data.get('current_file_idx', _current_idx))
+            return data
     except:
-        return 0, _current_idx
+        return init_default_memory()
 
-def write_meta(count, idx):
-    with open("meta.txt", "w") as f:
-        f.write("{}\n{}\n".format(count, idx))
+def write_memory(memory_data):
+    try:
+        with open("memory.dat", "w") as f:
+            f.write(format_memory_data(memory_data))
+    except Exception as e:
+        print("Memory write error:", e)
+
+def init_default_memory():
+    return {
+        'current_file_idx': _current_idx,
+        'private_key': 'deadbeef' * 8,
+        'files': {}
+    }
+
+def parse_memory_data(content):
+    data = init_default_memory()
+    lines = content.split('\n')
+    
+    for line in lines:
+        line = line.strip()
+        if not line or line.startswith('#'):
+            continue
+            
+        if ':' in line:
+            key, value = line.split(':', 1)
+            key = key.strip()
+            value = value.strip()
+            
+            if key == 'current_file_idx':
+                data['current_file_idx'] = int(value)
+            elif key == 'private_key':
+                data['private_key'] = value
+            elif key.startswith('file_'):
+                filename = key[5:]
+                file_info = parse_file_info(value)
+                data['files'][filename] = file_info
+    
+    return data
+
+def parse_file_info(value):
+    info = {'count': 0, 'hash': ''}
+    parts = value.split(',')
+    
+    for part in parts:
+        part = part.strip()
+        if '=' in part:
+            k, v = part.split('=', 1)
+            if k.strip() == 'count':
+                info['count'] = int(v.strip())
+            elif k.strip() == 'hash':
+                info['hash'] = v.strip()
+    
+    return info
+
+def format_memory_data(data):
+    lines = [
+        "current_file_idx: {}".format(data['current_file_idx']),
+        "private_key: {}".format(data['private_key'])
+    ]
+    
+    if data['files']:
+        for filename, info in data['files'].items():
+            lines.append("file_{}: count={},hash={}".format(
+                filename, info['count'], info['hash']
+            ))
+    
+    return '\n'.join(lines)
 
 def text_big(fb, s, x, y, c, scale=4):
     from framebuf import FrameBuffer, MONO_HLSB
@@ -83,10 +149,10 @@ def display(code, count, duration_us, filename, sig_short=""):
     body_scale   = 2 if filename == "9.py" else 3
     footer_scale = 2
 
-    char_w      = 8 * body_scale       # 1文字の幅
-    char_h      = 8 * body_scale       # 1文字の高さ
-    line_gap    = 6 * body_scale       # 行間
-    line_height = char_h + line_gap    # 実効行高
+    char_w      = 8 * body_scale
+    char_h      = 8 * body_scale
+    line_gap    = 6 * body_scale
+    line_height = char_h + line_gap
 
     W, H = epd.width, epd.height
 
@@ -136,7 +202,7 @@ def _key1_irq(pin):
         _key1_pressed = True
         _last_irq_ms = now
 
-def run_and_render(code, count, filename):
+def run_and_render(code, memory_data, filename):
     t0 = utime.ticks_us()
     try:
         exec(code, globals())
@@ -145,26 +211,37 @@ def run_and_render(code, count, filename):
     t1 = utime.ticks_us()
     dt_us = utime.ticks_diff(t1, t0)
 
-    sig_short, sig_full = make_exec_token(code, filename, count+1, dt_us, t0, t1)
 
-    count += 1
-    write_meta(count, _current_idx)
-    try:
-        with open("meta.txt", "a") as f:
-            f.write("sig:{}\n".format(sig_full))
-    except:
-        pass
+    if filename not in memory_data['files']:
+        memory_data['files'][filename] = {'count': 0, 'hash': ''}
+    
+    current_count = memory_data['files'][filename]['count'] + 1
+    memory_data['files'][filename]['count'] = current_count
+    
 
-    display(code, count, dt_us, filename, sig_short)
-    return count
+    sig_short, sig_full = make_exec_token(code, filename, current_count, dt_us, t0, t1)
+    memory_data['files'][filename]['hash'] = sig_full
+    
+
+    memory_data['current_file_idx'] = _current_idx
+    
+
+    write_memory(memory_data)
+
+    display(code, current_count, dt_us, filename, sig_short)
+    return memory_data
 
 def main_loop():
     global _current_idx, _key0_pressed, _key1_pressed
 
-    count, _current_idx = read_meta()
-    code, filename = read_code(_current_idx)
 
-    count = run_and_render(code, count, filename)
+    memory_data = read_memory()
+    _current_idx = memory_data['current_file_idx']
+    
+    code, filename = read_code(_current_idx)
+    
+
+    memory_data = run_and_render(code, memory_data, filename)
 
     key0 = Pin(KEY0_PIN, Pin.IN, Pin.PULL_UP)
     key1 = Pin(KEY1_PIN, Pin.IN, Pin.PULL_UP)
@@ -180,7 +257,7 @@ def main_loop():
                 _current_idx = clamp_idx(_current_idx - 1)
                 _key1_pressed = False
             code, filename = read_code(_current_idx)
-            count = run_and_render(code, count, filename)
+            memory_data = run_and_render(code, memory_data, filename)
         utime.sleep_ms(20)
 
 main_loop()
