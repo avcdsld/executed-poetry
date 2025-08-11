@@ -2,12 +2,9 @@ from machine import Pin
 import utime
 import time
 from Pico_ePaper_5in83_B import EPD_5in83_B
-
-try:
-    import uhashlib as hashlib
-except ImportError:
-    import hashlib
+import uhashlib as hashlib
 import ubinascii
+import ed25519
 
 def make_exec_token(code, filename, next_count, dt_us, t_start_us, t_end_us):
     h_code = hashlib.sha256(code.encode('utf-8')).digest()
@@ -16,6 +13,12 @@ def make_exec_token(code, filename, next_count, dt_us, t_start_us, t_end_us):
     full_hex = ubinascii.hexlify(h).decode()
     short = full_hex[:8]
     return short, full_hex
+
+def sign_execution(filename, count):
+    private_key, _ = generate_ed25519_keypair_from_device()
+    message = "{}{}".format(filename, count).encode()
+    signature = ed25519.sign_hex(private_key, message)
+    return signature
 
 epd = EPD_5in83_B()
 epd.init()
@@ -64,42 +67,42 @@ def write_memory(memory_data):
     except Exception as e:
         print("Memory write error:", e)
 
+def generate_ed25519_keypair_from_device():
+    from machine import unique_id
+    seed = b"To define is to kill. To suggest is to create. "
+    signing_key_bytes = hashlib.sha256(seed + unique_id()).digest()
+    public_key_bytes = ed25519.create_public_key(signing_key_bytes)
+    return (ubinascii.hexlify(signing_key_bytes).decode(),
+            ubinascii.hexlify(public_key_bytes).decode())
+
 def init_default_memory():
     return {
         'current_file_idx': _current_idx,
-        'private_key': 'deadbeef' * 8,
         'files': {}
     }
 
 def parse_memory_data(content):
     data = init_default_memory()
     lines = content.split('\n')
-    
     for line in lines:
         line = line.strip()
         if not line or line.startswith('#'):
             continue
-            
         if ':' in line:
             key, value = line.split(':', 1)
             key = key.strip()
             value = value.strip()
-            
             if key == 'current_file_idx':
                 data['current_file_idx'] = int(value)
-            elif key == 'private_key':
-                data['private_key'] = value
             elif key.startswith('file_'):
                 filename = key[5:]
                 file_info = parse_file_info(value)
                 data['files'][filename] = file_info
-    
     return data
 
 def parse_file_info(value):
     info = {'count': 0, 'hash': ''}
     parts = value.split(',')
-    
     for part in parts:
         part = part.strip()
         if '=' in part:
@@ -108,21 +111,17 @@ def parse_file_info(value):
                 info['count'] = int(v.strip())
             elif k.strip() == 'hash':
                 info['hash'] = v.strip()
-    
     return info
 
 def format_memory_data(data):
     lines = [
-        "current_file_idx: {}".format(data['current_file_idx']),
-        "private_key: {}".format(data['private_key'])
+        "current_file_idx: {}".format(data['current_file_idx'])
     ]
-    
     if data['files']:
         for filename, info in data['files'].items():
             lines.append("file_{}: count={},hash={}".format(
                 filename, info['count'], info['hash']
             ))
-    
     return '\n'.join(lines)
 
 def text_big(fb, s, x, y, c, scale=4):
@@ -142,12 +141,12 @@ def text_big(fb, s, x, y, c, scale=4):
                         for dx in range(scale):
                             fb.pixel(X+dx, Y+dy, 0)
 
-def display(code, count, duration_us, filename, sig_short=""):
+def display(code, count, duration_us, filename):
     epd.imageblack.fill(0xFF)
     epd.imagered.fill(0x00)
 
     body_scale   = 2 if filename == "9.py" else 3
-    footer_scale = 2
+    footer_scale = 1
 
     char_w      = 8 * body_scale
     char_h      = 8 * body_scale
@@ -156,7 +155,7 @@ def display(code, count, duration_us, filename, sig_short=""):
 
     W, H = epd.width, epd.height
 
-    footer_h = 12 * footer_scale + 4
+    footer_h = 12 * footer_scale * 4 + 8
     avail_h  = max(0, H - footer_h)
 
     raw_lines = code.splitlines()
@@ -182,9 +181,19 @@ def display(code, count, duration_us, filename, sig_short=""):
         y += line_height
 
     ms_time = duration_us / 1000.0
-    footer_str = "run #{} | time {:.3f}ms | {} {}".format(count, ms_time, sig_short, filename)
-    fy = H - (12 * footer_scale) - 4
-    text_big(epd.imageblack, footer_str, 10, fy, 0x00, footer_scale)
+    _, public_key = generate_ed25519_keypair_from_device()
+    ed25519_sig = sign_execution(filename, count)
+    
+    line1 = "run #{} | {:.3f}ms".format(count, ms_time)
+    line2 = "pub {}".format(public_key)
+    line3 = "sig {}".format(ed25519_sig[:64])
+    line4 = "    {}".format(ed25519_sig[64:])
+    
+    footer_y = H - (12 * footer_scale * 4) - 8
+    text_big(epd.imageblack, line1, 10, footer_y, 0x00, footer_scale)
+    text_big(epd.imageblack, line2, 10, footer_y + 12 * footer_scale, 0x00, footer_scale)
+    text_big(epd.imageblack, line3, 10, footer_y + 24 * footer_scale, 0x00, footer_scale)
+    text_big(epd.imageblack, line4, 10, footer_y + 36 * footer_scale, 0x00, footer_scale)
 
     epd.display(epd.buffer_black, epd.buffer_red)
 
@@ -211,7 +220,6 @@ def run_and_render(code, memory_data, filename):
     t1 = utime.ticks_us()
     dt_us = utime.ticks_diff(t1, t0)
 
-
     if filename not in memory_data['files']:
         memory_data['files'][filename] = {'count': 0, 'hash': ''}
     
@@ -219,22 +227,29 @@ def run_and_render(code, memory_data, filename):
     memory_data['files'][filename]['count'] = current_count
     
 
-    sig_short, sig_full = make_exec_token(code, filename, current_count, dt_us, t0, t1)
-    memory_data['files'][filename]['hash'] = sig_full
-    
+    _, hash_full = make_exec_token(code, filename, current_count, dt_us, t0, t1)
+    memory_data['files'][filename]['hash'] = hash_full
 
     memory_data['current_file_idx'] = _current_idx
-    
 
     write_memory(memory_data)
 
-    display(code, current_count, dt_us, filename, sig_short)
+    display(code, current_count, dt_us, filename)
     return memory_data
+
+def ensure_memory_exists():
+    try:
+        with open("memory.dat", "r") as f:
+            return True
+    except:
+        memory_data = init_default_memory()
+        write_memory(memory_data)
+        return False
 
 def main_loop():
     global _current_idx, _key0_pressed, _key1_pressed
 
-
+    ensure_memory_exists()
     memory_data = read_memory()
     _current_idx = memory_data['current_file_idx']
     
