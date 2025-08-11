@@ -9,10 +9,7 @@ epd = EPD_5in83_B()
 epd.init()
 epd.Clear(0xFF, 0x00)
 
-# Hardware configuration
 KEY0_PIN, KEY1_PIN = 2, 3
-
-# State variables  
 _key0_pressed = _key1_pressed = False
 _last_irq_ms = 0
 _current_idx = 2
