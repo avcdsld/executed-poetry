@@ -1,5 +1,5 @@
-# MicroPython用最小構成ed25519署名実装
-# python-pure25519から抽出・最適化
+# Minimal Ed25519 implementation for MicroPython
+# Extracted and optimized from https://github.com/warner/python-pure25519
 
 try:
     import uhashlib as hashlib
@@ -20,7 +20,6 @@ except ImportError:
         import os
         _urandom = os.urandom
     except ImportError:
-        # フォールバック: 時間ベースの簡易乱数
         import time
         def _urandom(n):
             t = int(time.ticks_us())
@@ -30,14 +29,12 @@ except ImportError:
                 result.append(t & 0xFF)
             return bytes(result)
 
-# Ed25519定数
 Q = 2**255 - 19
 L = 2**252 + 27742317777372353535851937790883648493
 
 def _inv(x):
     return pow(x, Q-2, Q)
 
-# 基本点の計算
 d = -121665 * _inv(121666)
 I = pow(2, (Q-1)//4, Q)
 
@@ -130,33 +127,29 @@ def _Hint(m):
     h = _H(m)
     return int(binascii.hexlify(h[::-1]), 16)
 
-# 公開API
-def create_signing_key():
-    """32バイトの秘密鍵を生成"""
+def create_private_key():
     return _urandom(32)
 
-def create_public_key(signing_key):
-    """秘密鍵から公開鍵を生成"""
-    if len(signing_key) != 32:
-        raise ValueError("signing_key must be 32 bytes")
+def create_public_key(priv_key):
+    if len(priv_key) != 32:
+        raise ValueError("priv_key must be 32 bytes")
     
-    h = _H(signing_key)
+    h = _H(priv_key)
     a = _bytes_to_clamped_scalar(h[:32])
     A_pt = _scalarmult_element(_xform_affine_to_extended(B), a)
     A_affine = _xform_extended_to_affine(A_pt)
     return _encodepoint(A_affine)
 
-def sign(signing_key, message):
-    """メッセージに署名"""
-    if len(signing_key) != 32:
-        raise ValueError("signing_key must be 32 bytes")
+def sign(priv_key, message):
+    if len(priv_key) != 32:
+        raise ValueError("priv_key must be 32 bytes")
     
     if isinstance(message, str):
         message = message.encode('utf-8')
     
-    public_key = create_public_key(signing_key)
+    pub_key = create_public_key(priv_key)
     
-    h = _H(signing_key)
+    h = _H(priv_key)
     a_bytes, inter = h[:32], h[32:]
     a = _bytes_to_clamped_scalar(a_bytes)
     
@@ -165,41 +158,10 @@ def sign(signing_key, message):
     R_affine = _xform_extended_to_affine(R_pt)
     R_bytes = _encodepoint(R_affine)
     
-    S = r + _Hint(R_bytes + public_key + message) * a
+    S = r + _Hint(R_bytes + pub_key + message) * a
     
     return R_bytes + _scalar_to_bytes(S)
 
-def sign_hex(signing_key_hex, message):
-    """16進文字列の秘密鍵でメッセージに署名し、16進文字列で返す"""
-    signing_key = binascii.unhexlify(signing_key_hex)
-    signature = sign(signing_key, message)
-    return binascii.hexlify(signature).decode()
-
-def create_keypair():
-    """鍵ペアを生成して16進文字列で返す"""
-    signing_key = create_signing_key()
-    public_key = create_public_key(signing_key)
-    return {
-        'signing_key': binascii.hexlify(signing_key).decode(),
-        'public_key': binascii.hexlify(public_key).decode()
-    }
-
-# 簡易テスト関数
-def test():
-    """基本的な動作テスト"""
-    print("Ed25519署名テスト開始...")
-    
-    # 鍵ペア生成
-    keypair = create_keypair()
-    print("秘密鍵:", keypair['signing_key'][:16] + "...")
-    print("公開鍵:", keypair['public_key'][:16] + "...")
-    
-    # 署名
-    message = "Hello, MicroPython!"
-    signature = sign_hex(keypair['signing_key'], message)
-    print("メッセージ:", message)
-    print("署名:", signature[:16] + "...")
-    
-    print("Ed25519署名テスト完了!")
-    return signature
-
+def sign_hex(priv_key_hex, message):
+    priv_key = binascii.unhexlify(priv_key_hex)
+    return binascii.hexlify(sign(priv_key, message)).decode()

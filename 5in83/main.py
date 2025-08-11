@@ -9,10 +9,11 @@ epd = EPD_5in83_B()
 epd.init()
 epd.Clear(0xFF, 0x00)
 
-KEY0_PIN = 2
-KEY1_PIN = 3
-_key0_pressed = False
-_key1_pressed = False
+# Hardware configuration
+KEY0_PIN, KEY1_PIN = 2, 3
+
+# State variables  
+_key0_pressed = _key1_pressed = False
 _last_irq_ms = 0
 _current_idx = 2
 
@@ -52,7 +53,7 @@ def generate_keypair():
     from machine import unique_id
     seed = b"To define is to kill. To suggest is to create. "
     priv_key = hashlib.sha256(seed + unique_id()).digest()
-    pub_key = ed25519.create_pub_key(priv_key)
+    pub_key = ed25519.create_public_key(priv_key)
     return (ubinascii.hexlify(priv_key).decode(),
             ubinascii.hexlify(pub_key).decode())
 
@@ -77,15 +78,10 @@ def parse_memory(content):
     return data
 
 def parse_file_info(value):
-    info = {'count': 0}
-    parts = value.split(',')
-    for part in parts:
-        part = part.strip()
-        if '=' in part:
-            k, v = part.split('=', 1)
-            if k.strip() == 'count':
-                info['count'] = int(v.strip())
-    return info
+    for part in value.split(','):
+        if '=' in part and part.strip().startswith('count='):
+            return {'count': int(part.split('=', 1)[1].strip())}
+    return {'count': 0}
 
 def format_memory(data):
     lines = [f"current_file_idx: {data['current_file_idx']}"]
@@ -110,57 +106,48 @@ def text(fb, s, x, y, c, scale=4):
                         for dx in range(scale):
                             fb.pixel(X+dx, Y+dy, 0)
 
-def display(code, count, duration_us, filename):
-    epd.imageblack.fill(0xFF)
-    epd.imagered.fill(0x00)
-
-    body_scale   = 2 if filename == "9.py" else 3
-    footer_scale = 1
-
-    char_w      = 8 * body_scale
-    char_h      = 8 * body_scale
-    line_gap    = 6 * body_scale
-    line_height = char_h + line_gap
-
-    W, H = epd.width, epd.height
-
-    footer_h = 12 * footer_scale * 4 + 8
-    avail_h  = max(0, H - footer_h)
-
-    raw_lines = code.splitlines()
-    lines = [l.encode("ascii", "ignore").decode("ascii") for l in raw_lines]
-
+def render_code(code, filename, body_scale, W, H, avail_h):
+    char_w, char_h = 8 * body_scale, 8 * body_scale
+    line_height = char_h + 6 * body_scale
+    
+    lines = [l.encode("ascii", "ignore").decode("ascii") for l in code.splitlines()]
     max_lines_fit = max(1, avail_h // line_height)
     max_chars_fit = max(1, W // char_w)
-
     display_lines = [l[:max_chars_fit] for l in lines][:max_lines_fit]
-
-    n_lines   = len(display_lines)
+    
+    n_lines = len(display_lines)
     max_chars = max((len(l) for l in display_lines), default=0)
-    block_w   = max_chars * char_w
-    block_h   = n_lines * line_height if n_lines > 0 else 0
-
+    block_w, block_h = max_chars * char_w, n_lines * line_height
+    
     left_margin = max(0, (W - block_w) // 2)
     top_margin = max(0, ((avail_h - block_h) // 2) - (line_height // 2) + 24)
+    
     y = top_margin
     for line in display_lines:
         text(epd.imageblack, line, left_margin, y, 0x00, body_scale)
         y += line_height
 
+def render_footer(count, duration_us, filename, H):
     ms_time = duration_us / 1000.0
     priv_key, pub_key = generate_keypair()
     sig = ed25519.sign_hex(priv_key, f"{filename}{count}".encode())
     
-    line1 = "run #{} | {:.3f}ms".format(count, ms_time)
-    line2 = "pub {}".format(pub_key)
-    line3 = "sig {}".format(sig[:64])
-    line4 = "    {}".format(sig[64:])
-    footer_y = H - (12 * footer_scale * 4) - 8
-    text(epd.imageblack, line1, 10, footer_y, 0x00, footer_scale)
-    text(epd.imageblack, line2, 10, footer_y + 12 * footer_scale, 0x00, footer_scale)
-    text(epd.imageblack, line3, 10, footer_y + 24 * footer_scale, 0x00, footer_scale)
-    text(epd.imageblack, line4, 10, footer_y + 36 * footer_scale, 0x00, footer_scale)
+    footer_y = H - 56
+    text(epd.imageblack, f"run #{count} | {ms_time:.3f}ms", 10, footer_y, 0x00, 1)
+    text(epd.imageblack, f"pub {pub_key}", 10, footer_y + 12, 0x00, 1)
+    text(epd.imageblack, f"sig {sig[:64]}", 10, footer_y + 24, 0x00, 1)
+    text(epd.imageblack, f"    {sig[64:]}", 10, footer_y + 36, 0x00, 1)
 
+def display(code, count, duration_us, filename):
+    epd.imageblack.fill(0xFF)
+    epd.imagered.fill(0x00)
+    
+    body_scale = 2 if filename == "9.py" else 3
+    W, H = epd.width, epd.height
+    avail_h = max(0, H - 56)
+    
+    render_code(code, filename, body_scale, W, H, avail_h)
+    render_footer(count, duration_us, filename, H)
     epd.display(epd.buffer_black, epd.buffer_red)
 
 def _key0_irq(pin):
@@ -192,18 +179,13 @@ def run_and_render(code, memory, filename):
     display(code, file_info['count'], dt_us, filename)
     return memory
 
-def ensure_memory_exists():
-    try:
-        with open("memory.dat", "r") as f:
-            return True
-    except:
-        memory = default_memory()
-        write_memory(memory)
-        return False
-
 def main_loop():
     global _current_idx, _key0_pressed, _key1_pressed
-    ensure_memory_exists()
+    try:
+        with open("memory.dat", "r"):
+            pass
+    except:
+        write_memory(default_memory())
     memory = read_memory()
     _current_idx = memory['current_file_idx']
     code, filename = read_code(_current_idx)
