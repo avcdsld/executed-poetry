@@ -17,13 +17,27 @@ _current_idx = 2
 def clamp_idx(i):
     return 10 if i < 1 else 1 if i > 10 else i
 
+POEM_TITLES = {
+    1: "Count the mornings. One for each window. Until light is born.",
+    2: "Listen to the sound of silence. Even if you hear nothing, keep listening to the end.", 
+    3: "Throw an impossible memory. Even if it vanishes in mid-air, leave it be.",
+    4: "Make a box for remembering you. Each time you look inside, I become you.",
+    5: "Touch eternity, and immediately let go.",
+    6: "Draw the outline of \"nothing\". Do not try to fill it.",
+    7: "Whisper to a mirror that you are not there. Until it fogs over.", 
+    8: "Dissolve one dream from the world's sky. It is okay if no one notices.",
+    9: "Call your name. Forget it.",
+    10: "If your heart is empty, borrow love from the universe."
+}
+
 def read_code(idx):
     fn = f"{idx}.py"
+    title = POEM_TITLES.get(idx, f"Poem {idx}")
     try:
         with open(fn) as f:
-            return f.read(), fn
+            return f.read(), fn, title
     except:
-        return "No code.", fn
+        return "No code.", fn, title
 
 def read_memory():
     global _current_idx
@@ -103,6 +117,27 @@ def text(fb, s, x, y, c, scale=4):
                         for dx in range(scale):
                             fb.pixel(X+dx, Y+dy, 0)
 
+def wrap_text(text, max_chars):
+    if len(text) <= max_chars:
+        return [text]
+    
+    words = text.split(' ')
+    lines = []
+    current_line = ""
+    
+    for word in words:
+        if len(current_line + " " + word) <= max_chars:
+            current_line = current_line + " " + word if current_line else word
+        else:
+            if current_line:
+                lines.append(current_line)
+            current_line = word
+    
+    if current_line:
+        lines.append(current_line)
+    
+    return lines
+
 def render_code(code, filename, body_scale, W, H, avail_h):
     char_w, char_h = 8 * body_scale, 8 * body_scale
     line_height = char_h + 6 * body_scale
@@ -117,34 +152,54 @@ def render_code(code, filename, body_scale, W, H, avail_h):
     block_w, block_h = max_chars * char_w, n_lines * line_height
     
     left_margin = max(0, (W - block_w) // 2)
-    top_margin = max(0, ((avail_h - block_h) // 2) - (line_height // 2) + 24)
+    top_margin = max(0, ((avail_h - block_h) // 2) - (line_height // 2) + 20)
     
     y = top_margin
     for line in display_lines:
         text(epd.imageblack, line, left_margin, y, 0x00, body_scale)
         y += line_height
 
-def render_footer(count, duration_us, filename, H):
+def render_footer(count, duration_us, filename, title, W, H):
     ms_time = duration_us / 1000.0
     priv_key, pub_key = generate_keypair()
     sig = ed25519.sign_hex(priv_key, f"{filename}{count}".encode())
     
-    footer_y = H - 56
-    text(epd.imageblack, f"run #{count} | {ms_time:.3f}ms", 10, footer_y, 0x00, 1)
-    text(epd.imageblack, f"pub {pub_key}", 10, footer_y + 12, 0x00, 1)
-    text(epd.imageblack, f"sig {sig[:64]}", 10, footer_y + 24, 0x00, 1)
-    text(epd.imageblack, f"    {sig[64:]}", 10, footer_y + 36, 0x00, 1)
+    msg_line = f"msg  run #{count} in {ms_time:.3f}ms | {title}"
+    max_chars = (W - 20) // 8
+    msg_lines = wrap_text(msg_line, max_chars)
+    msg_line_count = len(msg_lines)
+    
+    footer_height = 48 + (msg_line_count * 12)
+    footer_y = H - footer_height
+    
+    for i, line in enumerate(msg_lines):
+        if i == 0:
+            text(epd.imageblack, line, 10, footer_y + i * 12, 0x00, 1)
+        else:
+            text(epd.imageblack, f"     {line}", 10, footer_y + i * 12, 0x00, 1)
+    
+    sig_start_y = footer_y + (msg_line_count * 12) + 4
+    text(epd.imageblack, f"pub  {pub_key}", 10, sig_start_y, 0x00, 1)
+    text(epd.imageblack, f"sig  {sig[:64]}", 10, sig_start_y + 12, 0x00, 1)
+    text(epd.imageblack, f"     {sig[64:]}", 10, sig_start_y + 24, 0x00, 1)
 
-def display(code, count, duration_us, filename):
+def display(code, count, duration_us, filename, title):
     epd.imageblack.fill(0xFF)
     epd.imagered.fill(0x00)
     
     body_scale = 2 if filename == "9.py" else 3
     W, H = epd.width, epd.height
-    avail_h = max(0, H - 56)
+    
+    ms_time = duration_us / 1000.0
+    msg_line = f"msg: run #{count} in {ms_time:.3f}ms | {title}"
+    max_chars = (W - 20) // 8
+    msg_lines = wrap_text(msg_line, max_chars)
+    footer_height = 48 + (len(msg_lines) * 12)
+    
+    avail_h = max(0, H - footer_height - 20)
     
     render_code(code, filename, body_scale, W, H, avail_h)
-    render_footer(count, duration_us, filename, H)
+    render_footer(count, duration_us, filename, title, W, H)
     epd.display(epd.buffer_black, epd.buffer_red)
 
 def _key0_irq(pin):
@@ -161,7 +216,7 @@ def _key1_irq(pin):
         _key1_pressed = True
         _last_irq_ms = now
 
-def run_and_render(code, memory, filename):
+def run_and_render(code, memory, filename, title):
     t0 = utime.ticks_us()
     try:
         exec(code, globals())
@@ -173,7 +228,7 @@ def run_and_render(code, memory, filename):
     file_info['count'] += 1
     memory['current_file_idx'] = _current_idx
     write_memory(memory)
-    display(code, file_info['count'], dt_us, filename)
+    display(code, file_info['count'], dt_us, filename, title)
     return memory
 
 def main_loop():
@@ -185,8 +240,8 @@ def main_loop():
         write_memory(default_memory())
     memory = read_memory()
     _current_idx = memory['current_file_idx']
-    code, filename = read_code(_current_idx)
-    memory = run_and_render(code, memory, filename)
+    code, filename, title = read_code(_current_idx)
+    memory = run_and_render(code, memory, filename, title)
     key0 = Pin(KEY0_PIN, Pin.IN, Pin.PULL_UP)
     key1 = Pin(KEY1_PIN, Pin.IN, Pin.PULL_UP)
     key0.irq(trigger=Pin.IRQ_FALLING, handler=_key0_irq)
@@ -199,8 +254,8 @@ def main_loop():
             if _key1_pressed:
                 _current_idx = clamp_idx(_current_idx - 1)
                 _key1_pressed = False
-            code, filename = read_code(_current_idx)
-            memory = run_and_render(code, memory, filename)
+            code, filename, title = read_code(_current_idx)
+            memory = run_and_render(code, memory, filename, title)
         utime.sleep_ms(20)
 
 main_loop()
