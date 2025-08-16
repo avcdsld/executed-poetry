@@ -135,6 +135,7 @@ def _scalar_to_bytes(y):
     y = y % L
     return _rev(binascii.unhexlify("%064x" % y))
 
+# --- SHA-512 fallback for MicroPython (one-shot) ---
 try:
     _has_sha512 = hasattr(hashlib, "sha512")
 except:
@@ -203,6 +204,7 @@ if not _has_sha512:
 
     def _sha512_digest_once(m):
         return _sha512_one_shot(m)
+# --- end fallback ---
 
 def _H(m):
     if hasattr(hashlib, "sha512"):

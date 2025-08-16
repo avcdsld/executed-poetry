@@ -70,7 +70,10 @@ class EPD_5in83_B():
         utime.sleep(delaytime / 1000.0)
 
     def spi_writebyte(self, data):
-        self.spi.write(bytearray(data))
+        mv = memoryview(data)
+        CHUNK = 4096
+        for i in range(0, len(mv), CHUNK):
+            self.spi.write(mv[i:i+CHUNK])
 
     def module_exit(self):
         self.digital_write(self.reset_pin, 0)
@@ -87,13 +90,13 @@ class EPD_5in83_B():
     def send_command(self, command):
         self.digital_write(self.dc_pin, 0)
         self.digital_write(self.cs_pin, 0)
-        self.spi_writebyte([command])
+        self.spi.write(bytearray([command]))
         self.digital_write(self.cs_pin, 1)
 
     def send_data(self, data):
         self.digital_write(self.dc_pin, 1)
         self.digital_write(self.cs_pin, 0)
-        self.spi_writebyte([data])
+        self.spi.write(bytearray([data]))
         self.digital_write(self.cs_pin, 1)
         
     def send_data1(self, data):
@@ -158,13 +161,16 @@ class EPD_5in83_B():
         self.TurnOnDisplay()
 
     def Clear(self, colorBalck, colorRed):
-        self.send_command(0x10) # WRITE_RAM
-        for i in range(0, int(self.width / 8)):
-            self.send_data1([colorBalck] * self.height)
-            
-        self.send_command(0x13) # WRITE_RAM
-        for i in range(0, int(self.width / 8)):
-            self.send_data1([colorRed] * self.height)
+        self.send_command(0x10)  # WRITE_RAM (Black/White 面)
+        colB = bytes([colorBalck]) * self.height
+        for _ in range(self.width // 8):
+            self.send_data1(colB)
+
+        self.send_command(0x13)  # WRITE_RAM (Red 面)
+        colR = bytes([colorRed]) * self.height
+        for _ in range(self.width // 8):
+            self.send_data1(colR)
+
         self.TurnOnDisplay()
 
     def sleep(self):

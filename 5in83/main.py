@@ -162,7 +162,8 @@ def render_code(code, filename, body_scale, W, H, avail_h):
 def render_footer(count, duration_us, filename, title, W, H):
     ms_time = duration_us / 1000.0
     priv_key, pub_key = generate_keypair()
-    sig = ed25519.sign_hex(priv_key, f"{filename}{count}".encode())
+    sig_message = f"run #{count} in {ms_time:.3f}ms | {title}"
+    sig = ed25519.sign_hex(priv_key, sig_message.encode())
     
     msg_line = f"msg  run #{count} in {ms_time:.3f}ms | {title}"
     max_chars = (W - 20) // 8
