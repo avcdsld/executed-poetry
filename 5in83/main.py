@@ -165,6 +165,29 @@ def render_footer(count, duration_us, filename, title, W, H):
     sig_message = f"executed #{count} in {ms_time:.3f}ms | {title}"
     sig = ed25519.sign_hex(priv_key, sig_message.encode())
     
+    # デバッグ用：署名情報をファイルに保存
+    debug_info = {
+        'message': sig_message,
+        'public_key': pub_key,
+        'signature': sig,
+        'timestamp': ms_time,
+        'count': count,
+        'filename': filename,
+        'title': title
+    }
+    try:
+        with open('debug_signature.txt', 'w') as f:
+            f.write(f"Message: {debug_info['message']}\n")
+            f.write(f"Public Key: {debug_info['public_key']}\n")
+            f.write(f"Signature: {debug_info['signature']}\n")
+            f.write(f"Timestamp: {debug_info['timestamp']:.3f}ms\n")
+            f.write(f"Count: {debug_info['count']}\n")
+            f.write(f"Filename: {debug_info['filename']}\n")
+            f.write(f"Title: {debug_info['title']}\n")
+        print(f"Debug info saved to debug_signature.txt")
+    except Exception as e:
+        print(f"Failed to save debug info: {e}")
+    
     msg_line = f"msg  executed #{count} in {ms_time:.3f}ms | {title}"
     max_chars = (W - 20) // 8
     msg_lines = wrap_text(msg_line, max_chars)
