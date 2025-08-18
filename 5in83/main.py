@@ -5,14 +5,18 @@ import uhashlib as hashlib
 import ubinascii
 import ed25519
 
+KEY0_PIN, KEY1_PIN = 2, 3
+DEFAULT_IDX = 2
+DEBOUNCE_MS = 300
+SLEEP_MS = 20
+
 epd = EPD_5in83_B()
 epd.init()
 epd.Clear(0xFF, 0x00)
 
-KEY0_PIN, KEY1_PIN = 2, 3
 _key0_pressed = _key1_pressed = False
 _last_irq_ms = 0
-_current_idx = 2
+_current_idx = DEFAULT_IDX
 
 def clamp_idx(i):
     return 10 if i < 1 else 1 if i > 10 else i
@@ -57,8 +61,8 @@ def write_memory(memory):
     try:
         with open("memory.dat", "w") as f:
             f.write(format_memory(memory))
-    except Exception as e:
-        print("Memory write error:", e)
+    except:
+        pass
 
 def generate_keypair():
     from machine import unique_id
@@ -165,28 +169,11 @@ def render_footer(count, duration_us, filename, title, W, H):
     sig_message = f"executed #{count} in {ms_time:.3f}ms | {title}"
     sig = ed25519.sign_hex(priv_key, sig_message.encode())
     
-    # デバッグ用：署名情報をファイルに保存
-    debug_info = {
-        'message': sig_message,
-        'public_key': pub_key,
-        'signature': sig,
-        'timestamp': ms_time,
-        'count': count,
-        'filename': filename,
-        'title': title
-    }
     try:
-        with open('debug_signature.txt', 'w') as f:
-            f.write(f"Message: {debug_info['message']}\n")
-            f.write(f"Public Key: {debug_info['public_key']}\n")
-            f.write(f"Signature: {debug_info['signature']}\n")
-            f.write(f"Timestamp: {debug_info['timestamp']:.3f}ms\n")
-            f.write(f"Count: {debug_info['count']}\n")
-            f.write(f"Filename: {debug_info['filename']}\n")
-            f.write(f"Title: {debug_info['title']}\n")
-        print(f"Debug info saved to debug_signature.txt")
-    except Exception as e:
-        print(f"Failed to save debug info: {e}")
+        with open('poem.txt', 'w') as f:
+            f.write(f"{sig_message}\n{pub_key}\n{sig}\n")
+    except:
+        pass
     
     msg_line = f"msg  executed #{count} in {ms_time:.3f}ms | {title}"
     max_chars = (W - 20) // 8
@@ -215,10 +202,7 @@ def display(code, count, duration_us, filename, title):
     W, H = epd.width, epd.height
     
     ms_time = duration_us / 1000.0
-    msg_line = f"msg: executed #{count} in {ms_time:.3f}ms | {title}"
-    max_chars = (W - 20) // 8
-    msg_lines = wrap_text(msg_line, max_chars)
-    footer_height = 48 + (len(msg_lines) * 12)
+    footer_height = 48 + 12
     
     avail_h = max(0, H - footer_height - 20)
     
@@ -229,18 +213,18 @@ def display(code, count, duration_us, filename, title):
 def _key0_irq(pin):
     global _key0_pressed, _last_irq_ms
     now = utime.ticks_ms()
-    if utime.ticks_diff(now, _last_irq_ms) > 300:
+    if utime.ticks_diff(now, _last_irq_ms) > DEBOUNCE_MS:
         _key0_pressed = True
         _last_irq_ms = now
 
 def _key1_irq(pin):
     global _key1_pressed, _last_irq_ms
     now = utime.ticks_ms()
-    if utime.ticks_diff(now, _last_irq_ms) > 300:
+    if utime.ticks_diff(now, _last_irq_ms) > DEBOUNCE_MS:
         _key1_pressed = True
         _last_irq_ms = now
 
-def execute_and_render(code, memory, filename, title):
+def render(code, memory, filename, title):
     t0 = utime.ticks_us()
     try:
         exec(code, globals())
@@ -257,19 +241,23 @@ def execute_and_render(code, memory, filename, title):
 
 def main_loop():
     global _current_idx, _key0_pressed, _key1_pressed
+
     try:
         with open("memory.dat", "r"):
             pass
     except:
         write_memory(default_memory())
+
     memory = read_memory()
     _current_idx = memory['current_file_idx']
     code, filename, title = read_code(_current_idx)
-    memory = execute_and_render(code, memory, filename, title)
+    memory = render(code, memory, filename, title)
+    
     key0 = Pin(KEY0_PIN, Pin.IN, Pin.PULL_UP)
     key1 = Pin(KEY1_PIN, Pin.IN, Pin.PULL_UP)
     key0.irq(trigger=Pin.IRQ_FALLING, handler=_key0_irq)
     key1.irq(trigger=Pin.IRQ_FALLING, handler=_key1_irq)
+    
     while True:
         if _key0_pressed or _key1_pressed:
             if _key0_pressed:
@@ -279,7 +267,7 @@ def main_loop():
                 _current_idx = clamp_idx(_current_idx - 1)
                 _key1_pressed = False
             code, filename, title = read_code(_current_idx)
-            memory = execute_and_render(code, memory, filename, title)
-        utime.sleep_ms(20)
+            memory = render(code, memory, filename, title)
+        utime.sleep_ms(SLEEP_MS)
 
 main_loop()
