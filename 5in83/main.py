@@ -162,10 +162,10 @@ def render_code(code, filename, body_scale, W, H, avail_h):
 def render_footer(count, duration_us, filename, title, W, H):
     ms_time = duration_us / 1000.0
     priv_key, pub_key = generate_keypair()
-    sig_message = f"run #{count} in {ms_time:.3f}ms | {title}"
+    sig_message = f"executed #{count} in {ms_time:.3f}ms | {title}"
     sig = ed25519.sign_hex(priv_key, sig_message.encode())
     
-    msg_line = f"msg  run #{count} in {ms_time:.3f}ms | {title}"
+    msg_line = f"msg  executed #{count} in {ms_time:.3f}ms | {title}"
     max_chars = (W - 20) // 8
     msg_lines = wrap_text(msg_line, max_chars)
     msg_line_count = len(msg_lines)
@@ -192,7 +192,7 @@ def display(code, count, duration_us, filename, title):
     W, H = epd.width, epd.height
     
     ms_time = duration_us / 1000.0
-    msg_line = f"msg: run #{count} in {ms_time:.3f}ms | {title}"
+    msg_line = f"msg: executed #{count} in {ms_time:.3f}ms | {title}"
     max_chars = (W - 20) // 8
     msg_lines = wrap_text(msg_line, max_chars)
     footer_height = 48 + (len(msg_lines) * 12)
@@ -217,7 +217,7 @@ def _key1_irq(pin):
         _key1_pressed = True
         _last_irq_ms = now
 
-def run_and_render(code, memory, filename, title):
+def execute_and_render(code, memory, filename, title):
     t0 = utime.ticks_us()
     try:
         exec(code, globals())
@@ -242,7 +242,7 @@ def main_loop():
     memory = read_memory()
     _current_idx = memory['current_file_idx']
     code, filename, title = read_code(_current_idx)
-    memory = run_and_render(code, memory, filename, title)
+    memory = execute_and_render(code, memory, filename, title)
     key0 = Pin(KEY0_PIN, Pin.IN, Pin.PULL_UP)
     key1 = Pin(KEY1_PIN, Pin.IN, Pin.PULL_UP)
     key0.irq(trigger=Pin.IRQ_FALLING, handler=_key0_irq)
@@ -256,7 +256,7 @@ def main_loop():
                 _current_idx = clamp_idx(_current_idx - 1)
                 _key1_pressed = False
             code, filename, title = read_code(_current_idx)
-            memory = run_and_render(code, memory, filename, title)
+            memory = execute_and_render(code, memory, filename, title)
         utime.sleep_ms(20)
 
 main_loop()
