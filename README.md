@@ -1,9 +1,9 @@
 # Executed Poetry
 
-《Executed Poetry》は、コードの詩を実行し、その儚い痕跡を表示する装置です。
+Executed Poetry is a device that runs code-poems and displays their fleeting traces.
 
-ボタンを押すと、Python 言語で書かれた短い詩がマイコンの中で実行されます。電子ペーパーには、実行された詩とともに、実行回数、処理時間、マイコン固有の公開鍵と署名が表示されます。これらは詩がその計算機で確かに実行されたことを示す証明情報です。
+When the button is pressed, a short poem written in Python is executed inside the microcontroller. On the e-paper display, the executed poem appears together with its execution count, processing time, and the microcontroller’s unique public key and signature. These serve as cryptographic proof that the poem was indeed executed on that machine.
 
-収録された詩は、Python の原始的な機能を使って「存在」「永遠」「無」といった哲学的テーマを探求します。無限ループを即座に終了させる詩、存在しないクラスを定義して削除する詩、自己を否定しながら自己を返す詩。数行のコードが、計算と哲学の境界で揺れ動きます。
+The included poems use Python’s primitive features to explore philosophical themes such as existence, eternity, and nothingness. One poem begins an infinite loop only to end it instantly; another defines and deletes a class that never truly exists; yet another returns itself while simultaneously negating itself. In just a few lines, the code oscillates on the boundary between computation and philosophy.
 
-これは、コンピュータと詩の新しい関係性を提示する作品です。詩はもはや読まれるものではなく実行されるものです。そして私たちが目撃するのは実行の痕跡、計算機が刻んだ詩の墓碑銘です。
+This work proposes a new relationship between computers and poetry. Poems are no longer merely read—they are executed. What we witness are the traces of execution, the epitaphs engraved by the machine itself.
