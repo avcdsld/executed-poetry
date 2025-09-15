@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Executed Poetry Collection - Zeroichi Arakawa</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;1,400&family=IBM+Plex+Mono:wght@300;400&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #1a1a1a;
+            --secondary: #666;
+            --accent: #d63638;
+            --light: #f5f5f5;
+            --border: #e0e0e0;
+        }
+        
+        body {
+            font-family: 'EB Garamond', serif;
+            background: white;
+            color: var(--primary);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 20px;
+            min-height: 100vh;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        
+        .author {
+            font-size: 16px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--secondary);
+            font-weight: 400;
+            margin-bottom: 40px;
+        }
+        
+        .navigation {
+            margin-bottom: 20px;
+            padding: 10px 0;
+        }
+        
+        .nav-menu {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .nav-item {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 14px;
+            font-weight: 400;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--secondary);
+            text-decoration: none;
+            padding: 8px 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .nav-item:hover {
+            color: var(--primary);
+        }
+        
+        .nav-item.active {
+            color: var(--accent);
+        }
+        
+        .poem-section {
+            display: none;
+            padding: 20px 0;
+        }
+        
+        .poem-section.active {
+            display: block;
+        }
+        
+        .poem-section:last-child {
+            border-bottom: none;
+        }
+        
+        #about {
+            border-bottom: none;
+        }
+        
+        #xi {
+            border-bottom: none;
+        }
+        
+        .poem-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        
+        .poem-title {
+            font-size: 28px;
+            font-weight: 400;
+            font-style: italic;
+            line-height: 1.3;
+            margin-bottom: 16px;
+            color: var(--primary);
+        }
+        
+        .main-content {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .poetry-section {
+            flex: 0 0 auto;
+        }
+        
+        .code-poem {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 22px;
+            font-weight: 300;
+            line-height: 1.8;
+            color: var(--primary);
+            white-space: pre;
+            border: 1px solid var(--border);
+            padding: 35px 55px 45px 35px;
+            border-radius: 4px;
+        }
+        
+        .annotations {
+            flex: 1;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .annotation {
+            position: relative;
+            padding: 15px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            margin-bottom: 12px;
+        }
+        
+        .annotation::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 15px;
+            bottom: 15px;
+            width: 2px;
+            background: var(--border);
+        }
+        
+        .annotation.ai::before {
+            background: var(--accent);
+            opacity: 0.6;
+        }
+        
+        .annotation.human::before {
+            background: var(--primary);
+            opacity: 0.8;
+        }
+        
+        .annotation.system::before {
+            background: var(--secondary);
+            opacity: 0.6;
+        }
+        
+        .annotation-type {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            font-weight: 400;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--secondary);
+            margin-bottom: 4px;
+            margin-left: 16px;
+        }
+        
+        .annotation-text {
+            font-size: 13px;
+            line-height: 1.5;
+            color: var(--primary);
+            margin-left: 16px;
+        }
+        
+        .annotation-text p {
+            margin-bottom: 12px;
+        }
+        
+        .annotation-text p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .execution-content {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            color: var(--secondary);
+            white-space: pre;
+            border: 1px solid var(--border);
+            padding: 15px;
+            border-radius: 4px;
+            background: #fafafa;
+        }
+        
+        .description-section {
+            margin-bottom: 20px;
+            padding: 0 20px;
+        }
+        
+        .description-section .description {
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--secondary);
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .description-section .description:last-child {
+            margin-bottom: 0;
+        }
+        
+        
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px 15px;
+            }
+
+            .navigation {
+                margin-bottom: 15px;
+                padding: 8px 0;
+            }
+
+            .nav-menu {
+                gap: 15px;
+                flex-wrap: wrap;
+            }
+
+            .nav-item {
+                font-size: 14px;
+                padding: 8px 12px;
+            }
+
+            .poem-title {
+                font-size: 18px;
+                line-height: 1.4;
+            }
+
+            .author {
+                font-size: 14px;
+                margin-bottom: 12px;
+            }
+
+            .main-content {
+                flex-direction: column;
+                gap: 15px;
+                margin-bottom: 15px;
+            }
+
+            .left-column {
+                gap: 12px;
+                width: 100%;
+            }
+
+            .code-poem {
+                font-size: 12px;
+                padding: 20px 15px;
+                overflow-x: auto;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            .execution-content {
+                font-size: 11px;
+                padding: 15px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            .annotations {
+                gap: 12px;
+                max-width: none;
+                width: 100%;
+            }
+
+            .annotation {
+                padding: 12px;
+            }
+
+            .annotation-type {
+                font-size: 11px;
+                margin-bottom: 6px;
+                margin-left: 12px;
+            }
+
+            .annotation-text {
+                font-size: 13px;
+                line-height: 1.5;
+            }
+
+            .annotation-text p {
+                margin-bottom: 10px;
+            }
+
+            .description-section {
+                margin-bottom: 15px;
+                padding: 0 15px;
+            }
+
+            .description {
+                font-size: 14px;
+                line-height: 1.6;
+                margin-bottom: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px 10px;
+            }
+
+            .nav-menu {
+                gap: 10px;
+            }
+
+            .nav-item {
+                font-size: 13px;
+                padding: 6px 10px;
+            }
+
+            .poem-title {
+                font-size: 16px;
+            }
+
+            .code-poem {
+                font-size: 11px;
+                padding: 15px 10px;
+            }
+
+            .execution-content {
+                font-size: 10px;
+                padding: 12px;
+            }
+
+            .annotation {
+                padding: 10px;
+            }
+
+            .annotation-text {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+        </header>
+        
+        <nav class="navigation">
+            <div class="nav-menu">
+                <a href="#" class="nav-item" data-poem="about">about</a>
+                <a href="#" class="nav-item" data-poem="i">i</a>
+                <a href="#" class="nav-item" data-poem="ii">ii</a>
+                <a href="#" class="nav-item" data-poem="iii">iii</a>
+                <a href="#" class="nav-item" data-poem="ix">ix</a>
+                <a href="#" class="nav-item" data-poem="x">x</a>
+                <a href="#" class="nav-item" data-poem="xi">xi</a>
+            </div>
+        </nav>
+        
+        <!-- About Section -->
+        <section id="about" class="poem-section active">
+            <div class="poem-header">
+                <h2 class="poem-title">Executed Poetry</h2>
+                <p class="author">Zeroichi Arakawa</p>
+            </div>
+            
+            <div class="description-section">
+                <img src="image.jpg" alt="Executed Poetry Device" style="max-width: 100%; height: auto; margin-bottom: 20px; border-radius: 4px;">
+                <p class="description">
+                    Executed Poetry is a device that runs code-poems and displays their fleeting traces.
+                </p>
+                <p class="description">
+                    When the button is pressed, a short poem written in Python is executed inside the microcontroller. On the e-paper display, the executed poem appears together with its execution count, processing time, and the microcontroller's unique public key and signature. These serve as cryptographic proof that the poem was indeed executed on that machine.
+                </p>
+                <p class="description">
+                    The included poems use Python's primitive features to explore philosophical themes such as existence, eternity, and nothingness. One begins an infinite loop only to end it instantly; another defines and deletes a class that never truly exists; yet another returns itself while simultaneously negating itself. In just a few lines, the code oscillates on the boundary between computation and philosophy.
+                </p>
+                <p class="description">
+                    Poems are no longer merely read—they are executed. What we witness are the traces of execution, the epitaphs engraved by the machine itself.
+                </p>
+                <p class="description" style="font-style: italic; color: var(--secondary); margin-top: 30px;">
+                    Exhibited at "Computational Poetry" exhibition, NEORT++ Gallery, Tokyo, 2025
+                </p>
+            </div>
+        </section>
+
+        <!-- Poem i -->
+        <section id="i" class="poem-section">
+            <div class="poem-header">
+                <h2 class="poem-title">Count the mornings. One for each window. Until light is born.</h2>
+                <p class="author">Zeroichi Arakawa</p>
+            </div>
+            <div class="main-content">
+                <div class="left-column">
+                    <div class="poetry-section">
+                        <pre class="code-poem">def count(windows):
+    for window in windows:
+        if morning in window:
+            with window:
+                yield ...
+</pre>
+                    </div>
+                    <div class="execution-content">micropython:1.26.0 | Raspberry Pi Pico W | 2025-09-15 09:25:45 UTC
+
+</div>
+                </div>
+
+                <div class="annotations">
+                    <div class="annotation system">
+                        <!-- <div class="annotation-type">AI · Block 1</div> -->
+                        <div class="annotation-text">
+                            <p>A function containing `yield` becomes a generator, returning a generator object when called. Execution resumes each time `next()` is invoked, proceeding until the next `yield`. The `...` produced here is the Ellipsis, a singleton object. The same object is generated from every window. `with window:` employs the context manager protocol, representing the act of opening and closing a window.</p>
+                            <p>In this poem, the same object is generated repeatedly. To count may be to recognize sameness and difference simultaneously.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="annotation system">
+                        <div class="annotation-text">
+                            <p>`yield` を含む関数はジェネレータとなり、呼び出し時にジェネレータオブジェクトを返します。実行は `next()` が呼ばれるたびに再開され、次の `yield` まで進みます。ここで生成される `...` は Ellipsis（省略）という単一のシングルトンオブジェクトです。どの窓からも同じオブジェクトが生成されます。`with window:` はコンテキストマネージャプロトコルを使用し、窓を開いて閉じる動作を表現します。</p>
+                            <p>この詩では、同一のオブジェクトが繰り返し生成されます。数えること、それは、同一性と差異を同時に認識することかもしれません。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Poem ii -->
+        <section id="ii" class="poem-section">
+            <div class="poem-header">
+                <h2 class="poem-title">Make a box for remembering you. Each time you look inside, I become you.</h2>
+                <p class="author">Zeroichi Arakawa</p>
+            </div>
+            <div class="main-content">
+                <div class="left-column">
+                    <div class="poetry-section">
+                        <pre class="code-poem">def existence():
+    me = "I"
+    def remember(you):
+        nonlocal me
+        me = you
+    return me
+</pre>
+                    </div>
+                    
+                    <div class="execution-content">micropython:1.26.0 | Raspberry Pi Pico W | 2025-09-15 09:36:01 UTC
+
+</div>
+                </div>
+                
+                <div class="annotations">
+                    <div class="annotation system">
+                        <!-- <div class="annotation-type">AI · Block 1</div> -->
+                        <div class="annotation-text">
+                            <p>The inner function `remember` can modify the outer-scope variable `me` through the `nonlocal` declaration. When invoked, I become you. Yet, access to this function is closed off.</p>
+                            <p>In this poem, an incomplete closure reexamines the boundary between self and other. The inaccessible mechanism of transformation embodies both the impossibility and possibility of understanding the other.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="annotation system">
+                        <!-- <div class="annotation-type">Human · Block 1</div> -->
+                        <div class="annotation-text">
+                            <p>内部関数 `remember` は、`nonlocal` 宣言により外部スコープの変数 `me` を変更する能力を持ちます。この関数を呼び出すと、私はあなたに入れ替わります。しかし、この関数へのアクセスは閉ざされています。</p>
+                            <p>この詩では、不完全なクロージャを通じて、自己と他者の境界を問い直します。アクセス不可能な変換の機能は、他者理解の不可能性と可能性を同時に内包しています。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Poem iii -->
+        <section id="iii" class="poem-section">
+            <div class="poem-header">
+                <h2 class="poem-title">Touch eternity, and immediately let go.</h2>
+                <p class="author">Zeroichi Arakawa</p>
+            </div>
+            <div class="main-content">
+                <div class="left-column">
+                    <div class="poetry-section">
+                        <pre class="code-poem">while True:
+    break
+</pre>
+                    </div>
+                    
+                    <div class="execution-content">micropython:1.26.0 | Raspberry Pi Pico W | 2025-09-15 14:46:11 UTC
+
+</div>
+                </div>
+                
+                <div class="annotations">
+                    <div class="annotation system">
+                        <!-- <div class="annotation-type">AI · Block 1</div> -->
+                        <div class="annotation-text">
+                            <p>`while True:` begins an infinite loop, but since the first statement is `break`, the loop runs only once and then ends. Here, infinite structure and immediate termination coexist.</p>
+                            <p>This poem questions temporality through control structures. By letting the infinite and finite coexist, it explores the computability of eternity.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="annotation system">
+                        <!-- <div class="annotation-type">Human · Block 1</div> -->
+                        <div class="annotation-text">
+                            <p>`while True:` は無限ループを開始しますが、最初の文が `break` であるため、ループは一度だけ実行されて終了します。ここでは、無限の構造と即座の終了が共存しています。</p>
+                            <p>この詩は、制御構造を通じて時間性を問います。無限と有限が共存することで、永遠という概念の計算可能性を探求しています。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Poem ix -->
+        <section id="ix" class="poem-section">
+            <div class="poem-header">
+                <h2 class="poem-title">Draw the outline of "nothing". Do not try to fill it.</h2>
+                <p class="author">Zeroichi Arakawa</p>
+            </div>
+            <div class="main-content">
+                <div class="left-column">
+                    <div class="poetry-section">
+                        <pre class="code-poem">class Void:
+    pass
+del Void
+</pre>
+                    </div>
+                    
+                    <div class="execution-content">micropython:1.26.0 | Raspberry Pi Pico W | 2025-09-15 09:52:26 UTC
+
+</div>
+                </div>
+                
+                <div class="annotations">
+                    <div class="annotation system">
+                        <!-- <div class="annotation-type">AI · Block 1</div> -->
+                        <div class="annotation-text">
+                            <p>`class Void:` creates a class object, with `pass` leaving its body empty. `del Void` removes its reference from the namespace, but the object itself may persist if other references remain.</p>
+                            <p>The creation and deletion of objects interrogates ontology. The possibility of persisting without a name suggests the ambiguity between existence and nonexistence.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="annotation system">
+                        <!-- <div class="annotation-type">Human · Block 1</div> -->
+                        <div class="annotation-text">
+                            <p>`class Void:` でクラスオブジェクトを作成し、`pass` で本体を空にします。`del Void` は名前空間から参照を削除しますが、オブジェクト自体は他に参照があれば残存する可能性があります。</p>
+                            <p>オブジェクトの生成と削除は、存在論を問います。名前を失っても消えない可能性は、存在と非存在の境界の曖昧さを示唆します。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Poem x -->
+        <section id="x" class="poem-section">
+            <div class="poem-header">
+                <h2 class="poem-title">Whisper to a mirror that you are not there. Until it fogs over.</h2>
+                <p class="author">Zeroichi Arakawa</p>
+            </div>
+            <div class="main-content">
+                <div class="left-column">
+                    <div class="poetry-section">
+                        <pre class="code-poem">class Mirror:
+    def reflect(self):
+        try:
+            assert not self
+        finally:
+            return self
+</pre>
+                    </div>
+                    
+                    <div class="execution-content">micropython:1.26.0 | Raspberry Pi Pico W | 2025-09-15 09:56:14 UTC
+
+</div>
+                </div>
+                
+                <div class="annotations">
+                    <div class="annotation system">
+                        <!-- <div class="annotation-type">AI · Block 1</div> -->
+                        <div class="annotation-text">
+                            <p>`assert not self` raises an AssertionError, but within a `try-finally` structure the exception is suppressed, and `self` is returned. Each method call repeats the same assertion and the same failure.</p>
+                            <p>This poem explores the relationship between exception handling and self-awareness. The structure that records the repetition of errors pursues the paradox of proving existence through negation.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="annotation system">
+                        <!-- <div class="annotation-type">Human · Block 1</div> -->
+                        <div class="annotation-text">
+                            <p>`assert not self` は AssertionError を発生させますが、`try-finally` 構造により例外は抑制され、`self` が返されます。メソッドが呼ばれるたび、同じ表明と同じ失敗が繰り返されます。</p>
+                            <p>この詩は、例外処理と自己認識の関係を探ります。エラーの反復が痕跡を残す構造は、否定を通じた存在証明という逆説を探求します。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Poem xi -->
+        <section id="xi" class="poem-section">
+            <div class="poem-header">
+                <h2 class="poem-title">If your heart is empty, borrow love from the universe.</h2>
+                <p class="author">Zeroichi Arakawa</p>
+            </div>
+            <div class="main-content">
+                <div class="left-column">
+                    <div class="poetry-section">
+                        <pre class="code-poem">heart = set()
+try:
+    import love
+except Exception as love:
+    heart.add(love)
+</pre>
+                    </div>
+                    
+                    <div class="execution-content">micropython:1.26.0 | Raspberry Pi Pico W | 2025-09-15 09:58:35 UTC
+
+</div>
+                </div>
+                
+                <div class="annotations">
+                    <div class="annotation system">
+                        <!-- <div class="annotation-type">AI · Block 1</div> -->
+                        <div class="annotation-text">
+                            <p>An `ImportError` for the nonexistent `love` module is bound to the variable `love` and added to a set. What is preserved is not what was sought, but the response of "not found."</p>
+                            <p>This poem questions "relation." By accepting an error as love, it suggests that failure and absence too are forms of response.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="annotation system">
+                        <!-- <div class="annotation-type">Human · Block 1</div> -->
+                        <div class="annotation-text">
+                            <p>存在しない `love` モジュールの ImportError が、`love` 変数に束縛され、集合に追加されます。求めたものではなく、「見つからない」という応答が保存されます。</p>
+                            <p>この詩は「関係性」について問います。エラーを愛として受け入れることで、失敗や不在も応答の一形態であることを示しているように思えます。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const navItems = document.querySelectorAll('.nav-item');
+            const poemSections = document.querySelectorAll('.poem-section');
+            const hashToPoemId = {
+                '1': 'i',
+                '2': 'ii', 
+                '3': 'iii',
+                '4': 'ix',
+                '5': 'x',
+                '6': 'xi'
+            };
+
+            const hash = window.location.hash.substring(1); // Remove the #
+            const poemId = hashToPoemId[hash] || 'about';
+            showPoem(poemId);
+            
+            navItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const poemId = this.getAttribute('data-poem');
+                    showPoem(poemId);
+
+                    const poemToHash = Object.keys(hashToPoemId).find(key => hashToPoemId[key] === poemId);
+                    if (poemToHash) {
+                        window.location.hash = poemToHash;
+                    } else {
+                        window.location.hash = '';
+                    }
+                });
+            });
+
+            window.addEventListener('hashchange', function() {
+                const hash = window.location.hash.substring(1);
+                const poemId = hashToPoemId[hash] || 'about';
+                showPoem(poemId);
+            });
+            
+            function showPoem(poemId) {
+                poemSections.forEach(section => {
+                    section.classList.remove('active');
+                });
+                
+                navItems.forEach(item => {
+                    item.classList.remove('active');
+                });
+
+                const targetSection = document.getElementById(poemId);
+                if (targetSection) {
+                    targetSection.classList.add('active');
+                }
+
+                const targetNavItem = document.querySelector(`[data-poem="${poemId}"]`);
+                if (targetNavItem) {
+                    targetNavItem.classList.add('active');
+                }
+
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        });
+    </script>
+</body>
+</html>
