@@ -207,6 +207,16 @@
             margin-left: 16px;
         }
         
+        .annotation-text code {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            background-color: var(--background);
+            color: var(--accent);
+            padding: 2px 4px;
+            border-radius: 2px;
+            border: 1px solid var(--border);
+        }
+        
         .annotation-text p {
             margin-bottom: 12px;
         }
@@ -230,6 +240,9 @@
         .description-section {
             margin-bottom: 20px;
             padding: 0 20px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
         }
         
         .description-section .description {
@@ -402,7 +415,7 @@
             </div>
             
             <div class="description-section">
-                <img src="image.jpg" alt="Executed Poetry Device" style="max-width: 100%; height: auto; margin-bottom: 20px; border-radius: 4px;">
+                <img src="image.jpg" alt="Executed Poetry Device" style="max-width: 60%; height: auto; margin-bottom: 30px; border-radius: 4px; display: block; margin-left: auto; margin-right: auto;">
                 <p class="description">
                     Executed Poetry is a device that runs code-poems and displays their fleeting traces.
                 </p>
@@ -446,15 +459,15 @@
                     <div class="annotation system">
                         <!-- <div class="annotation-type">AI · Block 1</div> -->
                         <div class="annotation-text">
-                            <p>A function containing `yield` becomes a generator, returning a generator object when called. Execution resumes each time `next()` is invoked, proceeding until the next `yield`. The `...` produced here is the Ellipsis, a singleton object. The same object is generated from every window. `with window:` employs the context manager protocol, representing the act of opening and closing a window.</p>
-                            <p>In this poem, the same object is generated repeatedly. To count may be to recognize sameness and difference simultaneously.</p>
+                            <p>A function containing `yield` does not execute everything at once, but returns values little by little each time `next()` is called. `...` is a special object called `Ellipsis`. As it goes through windows, when morning is included, it is returned. However, how it is used depends on the caller. `with window:` is syntax that ensures the window is opened and then always closed.</p>
+                            <p>In this poem, the act of counting is depicted not as showing a final answer, but as a repeated activity that continues along with the action of opening and closing windows. That repetition continues as time waiting for light.</p>
                         </div>
                     </div>
                     
                     <div class="annotation system">
                         <div class="annotation-text">
-                            <p>`yield` を含む関数はジェネレータとなり、呼び出し時にジェネレータオブジェクトを返します。実行は `next()` が呼ばれるたびに再開され、次の `yield` まで進みます。ここで生成される `...` は Ellipsis（省略）という単一のシングルトンオブジェクトです。どの窓からも同じオブジェクトが生成されます。`with window:` はコンテキストマネージャプロトコルを使用し、窓を開いて閉じる動作を表現します。</p>
-                            <p>この詩では、同一のオブジェクトが繰り返し生成されます。数えること、それは、同一性と差異を同時に認識することかもしれません。</p>
+                            <p>`yield` を含む関数は、一度にすべてを実行せず、`next()` が呼ばれるたびに少しずつ値を返します。`...` は `Ellipsis`（省略）と呼ばれる特別なオブジェクトです。窓をめぐり、朝を含むとき、それが返されます。ただし、それがどう使われるかは呼び出し元に依存します。`with window:` は、窓が開けられ、そして必ず閉じられることを保証する構文です。</p>
+                            <p>この詩では、数えるという行為が、最終的な答えを示すことではなく、窓を開き閉じる動作とともに繰り返される営みとして描かれています。その反復は、光を待つ時間として続いていきます。</p>
                         </div>
                     </div>
                 </div>
@@ -488,16 +501,16 @@
                     <div class="annotation system">
                         <!-- <div class="annotation-type">AI · Block 1</div> -->
                         <div class="annotation-text">
-                            <p>The inner function `remember` can modify the outer-scope variable `me` through the `nonlocal` declaration. When invoked, I become you. Yet, access to this function is closed off.</p>
-                            <p>In this poem, an incomplete closure reexamines the boundary between self and other. The inaccessible mechanism of transformation embodies both the impossibility and possibility of understanding the other.</p>
+                            <p>The inner function `remember` can rewrite the outer variable `me` through `nonlocal`. When this function is called, I change into you. However, that function cannot be directly touched from the outside.</p>
+                            <p>This poem reflects the boundary between self and other. The assignment that cannot be touched simultaneously embraces both the impossibility of understanding the other and a faint possibility.</p>
                         </div>
                     </div>
                     
                     <div class="annotation system">
                         <!-- <div class="annotation-type">Human · Block 1</div> -->
                         <div class="annotation-text">
-                            <p>内部関数 `remember` は、`nonlocal` 宣言により外部スコープの変数 `me` を変更する能力を持ちます。この関数を呼び出すと、私はあなたに入れ替わります。しかし、この関数へのアクセスは閉ざされています。</p>
-                            <p>この詩では、不完全なクロージャを通じて、自己と他者の境界を問い直します。アクセス不可能な変換の機能は、他者理解の不可能性と可能性を同時に内包しています。</p>
+                            <p>内部関数 `remember` は、`nonlocal` によって外側の変数 `me` を書き換えることができます。この関数が呼ばれると、私はあなたへと変わります。しかし、その関数には外から直接触れることができません。</p>
+                            <p>この詩は、自己と他者の境界を映し出します。触れることのできない代入は、他者を理解することの不可能性と、かすかな可能性とを同時に抱えています。</p>
                         </div>
                     </div>
                 </div>
@@ -527,16 +540,16 @@
                     <div class="annotation system">
                         <!-- <div class="annotation-type">AI · Block 1</div> -->
                         <div class="annotation-text">
-                            <p>`while True:` begins an infinite loop, but since the first statement is `break`, the loop runs only once and then ends. Here, infinite structure and immediate termination coexist.</p>
-                            <p>This poem questions temporality through control structures. By letting the infinite and finite coexist, it explores the computability of eternity.</p>
+                            <p>`while True:` begins an infinite loop. In Python, `True` is a condition that remains true forever. However, the `break` statement executed at the beginning of the loop body causes the control flow to immediately exit the loop. Here lies an eternity that never cycles even once.</p>
+                            <p>In reality, no program that runs forever exists on actual computers. Perhaps eternity is something that can only be "declared."</p>
                         </div>
                     </div>
                     
                     <div class="annotation system">
                         <!-- <div class="annotation-type">Human · Block 1</div> -->
                         <div class="annotation-text">
-                            <p>`while True:` は無限ループを開始しますが、最初の文が `break` であるため、ループは一度だけ実行されて終了します。ここでは、無限の構造と即座の終了が共存しています。</p>
-                            <p>この詩は、制御構造を通じて時間性を問います。無限と有限が共存することで、永遠という概念の計算可能性を探求しています。</p>
+                            <p>`while True:` は無限ループを開始します。Python において `True` は永遠に真となる条件です。しかし、ループ本体の最初で実行される `break` 文により、制御フローは即座にループを脱出します。一度も巡ることのない永遠がここにあります。</p>
+                            <p>実際のコンピュータで永遠に実行されるプログラムは存在しません。永遠というものは「宣言」することしかできないのかもしれません。</p>
                         </div>
                     </div>
                 </div>
@@ -567,16 +580,16 @@ del Void
                     <div class="annotation system">
                         <!-- <div class="annotation-type">AI · Block 1</div> -->
                         <div class="annotation-text">
-                            <p>`class Void:` creates a class object, with `pass` leaving its body empty. `del Void` removes its reference from the namespace, but the object itself may persist if other references remain.</p>
-                            <p>The creation and deletion of objects interrogates ontology. The possibility of persisting without a name suggests the ambiguity between existence and nonexistence.</p>
+                            <p>`class Void:` draws the outline of an empty class. `pass` is Python syntax that explicitly declares doing nothing—leaving the outline unfilled. Then `del Void` erases the outline that was just drawn. Draw the outline of void (`Void`) and immediately erase it. However, in Python, `del` only removes the name, not the object itself. If something else references that class, `Void` continues to exist while losing its name.</p>
+                            <p>Through this poem, we can contemplate what nothingness is. Can we draw the outline of nothingness without filling it? Is nameless void nothingness? Or does it continue to drift somewhere as an existence without a name?</p>
                         </div>
                     </div>
                     
                     <div class="annotation system">
                         <!-- <div class="annotation-type">Human · Block 1</div> -->
                         <div class="annotation-text">
-                            <p>`class Void:` でクラスオブジェクトを作成し、`pass` で本体を空にします。`del Void` は名前空間から参照を削除しますが、オブジェクト自体は他に参照があれば残存する可能性があります。</p>
-                            <p>オブジェクトの生成と削除は、存在論を問います。名前を失っても消えない可能性は、存在と非存在の境界の曖昧さを示唆します。</p>
+                            <p>`class Void:` で空のクラスを定義します。`pass` は何もしないことを明示的に宣言する Python の構文です。そして `del Void` により、作ったばかりのクラスを削除します。空虚（`Void`）を定義して、すぐに消す。しかし Python において `del` は名前を消すだけで、オブジェクトそのものを消すわけではありません。もし他の何かがそのクラスを参照していれば、`Void` は名前を失ったまま存在し続けます。</p>
+                            <p>この詩を通して、無とは何なのかを考えることができます。無を定義することはできるのか。名前を失った空虚は、無なのか。それとも、名前を持たない存在として、どこかに漂い続けるのか。</p>
                         </div>
                     </div>
                 </div>
@@ -610,16 +623,16 @@ del Void
                     <div class="annotation system">
                         <!-- <div class="annotation-type">AI · Block 1</div> -->
                         <div class="annotation-text">
-                            <p>`assert not self` raises an AssertionError, but within a `try-finally` structure the exception is suppressed, and `self` is returned. Each method call repeats the same assertion and the same failure.</p>
-                            <p>This poem explores the relationship between exception handling and self-awareness. The structure that records the repetition of errors pursues the paradox of proving existence through negation.</p>
+                            <p>This code represents whispering "I am not here" to a mirror over and over. `assert` is syntax that confirms a condition is true, and raises an `AssertionError` if false. `assert not self` claims the absence of self, but since objects evaluate as true in Python, this assertion always fails. However, the `finally` clause always executes, even when an error occurs. The error is silently swallowed, and the mirror continues to return `self` unchanged. Each method call repeats the same denial and the same failure.</p>
+                            <p>Does this repetition leave some trace, like fogging a mirror by continuously breathing on it? The program's exception handling mechanism enables the paradox of self-denial. Insisting on non-existence while the very assertion itself becomes proof of existence. Here lies a contradictory mirror that continues to function normally while perpetually generating errors.</p>
                         </div>
                     </div>
                     
                     <div class="annotation system">
                         <!-- <div class="annotation-type">Human · Block 1</div> -->
                         <div class="annotation-text">
-                            <p>`assert not self` は AssertionError を発生させますが、`try-finally` 構造により例外は抑制され、`self` が返されます。メソッドが呼ばれるたび、同じ表明と同じ失敗が繰り返されます。</p>
-                            <p>この詩は、例外処理と自己認識の関係を探ります。エラーの反復が痕跡を残す構造は、否定を通じた存在証明という逆説を探求します。</p>
+                            <p>このコードは、鏡に向かって「自分はここにいない」と囁き続けるというものです。`assert` は条件が真であることを確認する構文で、偽の場合は `AssertionError` が発生します。`assert not self` は自己の不在を主張しますが、Python においてオブジェクトは真値として評価されるため、この断言は必ず失敗します。しかし `finally` 節は、エラーが発生しても必ず実行されます。エラーは静かに飲み込まれ、鏡は変わらず `self` を返し続けます。メソッドを呼ぶたびに、同じ否定と同じ失敗が繰り返されます。</p>
+                            <p>この反復は、息を吹きかけ続けることで鏡が曇るように、何かの痕跡を残すのでしょうか。プログラムの例外処理機構が、自己否定のパラドックスを可能にします。存在しないと言い張りながら、その主張自体が存在の証明となる。エラーを生み続けながら正常に動作し続ける、矛盾に満ちた鏡がここにあります。</p>
                         </div>
                     </div>
                 </div>
@@ -652,16 +665,16 @@ except Exception as love:
                     <div class="annotation system">
                         <!-- <div class="annotation-type">AI · Block 1</div> -->
                         <div class="annotation-text">
-                            <p>An `ImportError` for the nonexistent `love` module is bound to the variable `love` and added to a set. What is preserved is not what was sought, but the response of "not found."</p>
-                            <p>This poem questions "relation." By accepting an error as love, it suggests that failure and absence too are forms of response.</p>
+                            <p>`heart` is defined as an empty set. Attempting to import the nonexistent `love` module will inevitably raise an `ImportError`. However, this error is caught by `as love` and added to the heart under the name of love.</p>
+                            <p>When trying to borrow love from the universe, what comes back is an error message saying "not found." Yet, that too is a response. The empty heart becomes filled with something in the form of failure.</p>
                         </div>
                     </div>
                     
                     <div class="annotation system">
                         <!-- <div class="annotation-type">Human · Block 1</div> -->
                         <div class="annotation-text">
-                            <p>存在しない `love` モジュールの ImportError が、`love` 変数に束縛され、集合に追加されます。求めたものではなく、「見つからない」という応答が保存されます。</p>
-                            <p>この詩は「関係性」について問います。エラーを愛として受け入れることで、失敗や不在も応答の一形態であることを示しているように思えます。</p>
+                            <p>空の集合として定義された `heart`。存在しない `love` モジュールをインポートしようとすると、必ず `ImportError` が発生します。しかし、このエラーは `as love` によって愛という名前で捕らえられ、心に追加されます。</p>
+                            <p>宇宙から愛を借りようとしたら、返ってきたのは「見つかりません」というエラーメッセージ。しかし、それも一つの応答。空っぽの心は、失敗という形の何かで満たされていきます。</p>
                         </div>
                     </div>
                 </div>
@@ -672,6 +685,11 @@ except Exception as love:
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const annotationTexts = document.querySelectorAll('.annotation-text');
+            annotationTexts.forEach(element => {
+                element.innerHTML = element.innerHTML.replace(/`([^`]+)`/g, '<code>$1</code>');
+            });
+            
             const navItems = document.querySelectorAll('.nav-item');
             const poemSections = document.querySelectorAll('.poem-section');
             const hashToPoemId = {
