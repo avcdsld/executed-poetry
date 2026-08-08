@@ -1,0 +1,2 @@
+@openzeppelin/contracts/=deps/@openzeppelin/contracts/
+solady/=deps/solady/
